@@ -1,16 +1,16 @@
 const path = require("path");
-const { promises: fs } = require("fs");
-const { app } = require("electron");
-const yaml = require("js-yaml");
-const { time, timeEnd } = require("console");
-import {
+const { ipcMain } = require("electron");
+const {
   getAllFiles,
   getConfig,
   getMetaFileName,
   isMetaFile,
-} from "./fileUtils";
+  getMeta,
+  writeMeta,
+} = require("./fileUtils.js");
+const { log, trace } = require("console");
 
-ipcMain.handle("getRootDir", async (event, ...arg) => {
+const getRootDir = async () => {
   const config = await getConfig();
   if (config.error) {
     return config;
@@ -22,33 +22,27 @@ ipcMain.handle("getRootDir", async (event, ...arg) => {
     },
     ok: true,
   };
-});
+};
 
-ipcMain.handle("getUntaggedFiles", async () => {
+const getUntaggedFiles = async () => {
   const config = await getConfig();
   if (config.error) {
     return config;
   }
   const fileEntries = await getAllFiles(config.rootPath);
   const taggedFileNames = fileEntries
-    .filter(
-      (entry) =>
-        entry.fileName.startsWith(".") && entry.fileName.endsWith(".meta")
-    )
+    .filter((entry) => isMetaFile(entry))
     .map((entry) => {
       return entry.fileName.substring(1, entry.fileName.indexOf(".meta"));
     });
   const untaggedEntries = fileEntries
     .filter((entry) => !taggedFileNames.includes(entry.fileName))
-    .filter(
-      (entry) =>
-        !(entry.fileName.startsWith(".") && entry.fileName.endsWith(".meta"))
-    );
-  console.log(untaggedEntries);
-  return untaggedEntries;
-});
+    .filter((entry) => !isMetaFile(entry));
+  trace(untaggedEntries);
+  return { data: untaggedEntries, ok: true };
+};
 
-ipcMain.handle("getTaggedFiles", async () => {
+const getTaggedFiles = async () => {
   const config = await getConfig();
   if (config.error) {
     return config;
@@ -66,18 +60,41 @@ ipcMain.handle("getTaggedFiles", async () => {
       )
       .filter((entry) => !isMetaFile(entry))
       .map(async (entry) => {
-        const metaFileName = getMetaFileName(entry);
-        const metaFile = await fs.readFile(
-          path.join(path.dirname(entry.fullPath), metaFileName),
-          {
-            encoding: "utf8",
-          }
-        );
-        const meta = yaml.load(metaFile);
-        const tags = meta.tags || [];
+        const meta = await getMeta(entry);
 
-        return { ...entry, tags };
+        return { ...entry, meta };
       })
   );
-  return taggedEntries;
-});
+  trace(taggedEntries);
+  return { data: taggedEntries, ok: true };
+};
+
+const setFileTags = async (event, ...args) => {
+  if (args.length === 0) {
+    return;
+  }
+  const fileEntries = args[0];
+  await Promise.all(
+    fileEntries.forEach((entry) => {
+      writeMeta(entry);
+    })
+  );
+  return;
+};
+
+exports.validChannels = [
+  "getRootDir",
+  "getTaggedFiles",
+  "getUntaggedFiles",
+  "setFileTags",
+];
+
+exports.setupChannels = () => {
+  ipcMain.handle("getRootDir", getRootDir);
+
+  ipcMain.handle("getUntaggedFiles", getUntaggedFiles);
+
+  ipcMain.handle("getTaggedFiles", getTaggedFiles);
+
+  ipcMain.handle("setFileTags", setFileTags);
+};

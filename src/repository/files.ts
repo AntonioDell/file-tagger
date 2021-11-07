@@ -2,22 +2,27 @@ enum ApiKey {
   GET_ROOT_DIR = "getRootDir",
   GET_TAGGED_FILES = "getTaggedFiles",
   GET_UNTAGGED_FILES = "getUntaggedFiles",
+  SET_FILE_TAGS = "setFileTags",
 }
 
 const invokeApi = window.apiKey.invokeApi;
-/** Get root dir in which tagging takes place. */
+
 export const getRootDirectory = async (): Promise<ApiResponse<FileEntry>> => {
   return invokeApi(ApiKey.GET_ROOT_DIR);
 };
 
-/** Get all tagged files */
-export const getTaggedFiles = async (): Promise<FileEntry[]> => {
+export const getTaggedFiles = async (): Promise<ApiResponse<FileEntry[]>> => {
   return invokeApi(ApiKey.GET_TAGGED_FILES);
 };
 
-/** Get all untagged files */
-export const getUntaggedFiles = async (): Promise<FileEntry[]> => {
+export const getUntaggedFiles = async (): Promise<ApiResponse<FileEntry[]>> => {
   return invokeApi(ApiKey.GET_UNTAGGED_FILES);
+};
+
+export const setFileTags = async (
+  files: FileEntry[]
+): Promise<ApiResponse<FileEntry[]>> => {
+  return invokeApi(ApiKey.SET_FILE_TAGS, files);
 };
 
 export interface ApiResponse<T> {
@@ -29,5 +34,9 @@ export interface ApiResponse<T> {
 export interface FileEntry {
   fullPath: string;
   fileName: string;
+  meta?: FileMeta;
+}
+
+export interface FileMeta {
   tags?: string[];
 }

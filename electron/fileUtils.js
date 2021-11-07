@@ -2,30 +2,32 @@ const path = require("path");
 const { promises: fs } = require("fs");
 const { app } = require("electron");
 const yaml = require("js-yaml");
-const { time, timeEnd } = require("console");
-export const getConfig = async () => {
-    const userDataPath = app.getPath("userData");
-    const configPath = path.join(userDataPath, "config.yml");
-    let config;
+
+const getConfig = async () => {
+  const userDataPath = app.getPath("userData");
+  const configPath = path.join(userDataPath, "config.yml");
+  let config;
+  try {
+    const configFile = await fs.readFile(configPath, {
+      encoding: "utf8",
+    });
+    config = yaml.load(configFile);
+  } catch (error) {
+    // TODO: Remove test code
+    config = { rootPath: path.join(app.getPath("home"), "test") };
     try {
-        const configFile = await fs.readFile(configPath, {
-            encoding: "utf8",
-        });
-        config = yaml.load(configFile);
+      await fs.writeFile(configPath, yaml.dump(config));
+    } catch (breakingError) {
+      console.error(
+        `Unable to write config yaml to path ${configPath}.`,
+        breakingError
+      );
+      return { error: breakingError, ok: false };
     }
-    catch (error) {
-        // TODO: Remove test code
-        config = { rootPath: path.join(app.getPath("home"), "test") };
-        try {
-            await fs.writeFile(configPath, yaml.dump(config));
-        }
-        catch (breakingError) {
-            console.error(`Unable to write config yaml to path ${configPath}.`, breakingError);
-            return { error: breakingError, ok: false };
-        }
-    }
-    return config;
+  }
+  return config;
 };
+
 /**
  *
  * @param {String} currentDir Path of the current directory
@@ -33,29 +35,67 @@ export const getConfig = async () => {
  * @param {[]} result FileEntry list
  * @returns {Promise<[]>}
  */
-export const getAllFiles = async (currentDir, nextDirs = [], result = []) => {
-    const dir = await fs.opendir(currentDir);
-    for await (const file of dir) {
-        if (file.isDirectory()) {
-            nextDirs.push(path.join(dir.path, file.name));
-        }
-        else {
-            result.push({
-                fullPath: path.join(dir.path, file.name),
-                fileName: file.name,
-            });
-        }
+const getAllFiles = async (currentDir, nextDirs = [], result = []) => {
+  const dir = await fs.opendir(currentDir);
+  for await (const file of dir) {
+    if (file.isDirectory()) {
+      nextDirs.push(path.join(dir.path, file.name));
+    } else {
+      result.push({
+        fullPath: path.join(dir.path, file.name),
+        fileName: file.name,
+      });
     }
-    const nextDir = nextDirs.pop();
-    if (!nextDir) {
-        return result;
-    }
-    return getAllFiles(nextDir, nextDirs, result);
+  }
+  const nextDir = nextDirs.pop();
+  if (!nextDir) {
+    return result;
+  }
+  return getAllFiles(nextDir, nextDirs, result);
 };
-export const isMetaFile = (fileEntry) => {
-    return (fileEntry.fileName.startsWith(".") && fileEntry.fileName.endsWith(".meta"));
+
+const isMetaFile = (fileEntry) => {
+  return (
+    fileEntry.fileName.startsWith(".") && fileEntry.fileName.endsWith(".meta")
+  );
 };
-export const getMetaFileName = (fileEntry) => {
-    return `.${fileEntry.fileName}.meta`;
+
+const getMetaFileName = (fileEntry) => {
+  return `.${fileEntry.fileName}.meta`;
 };
-//# sourceMappingURL=fileUtils.js.map
+
+const getMeta = async (fileEntry) => {
+  const metaFileName = getMetaFileName(fileEntry);
+  try {
+    const metaFile = await fs.readFile(
+      path.join(path.dirname(fileEntry.fullPath), metaFileName),
+      {
+        encoding: "utf8",
+      }
+    );
+    return yaml.load(metaFile);
+  } catch (error) {
+    return { tags: [] };
+  }
+};
+
+const writeMeta = async (fileEntry) => {
+  const meta = {
+    ...fileEntry.meta,
+    tags: fileEntry.meta.tags.map((tag) => tag.toLowerCase()),
+  };
+  const metaFileContent = yaml.dump(meta);
+  await fs.writeFile(
+    path.join(path.dirname(fileEntry.fullPath), getMetaFileName(fileEntry)),
+    metaFileContent
+  );
+};
+
+module.exports = {
+  getMetaFileName,
+  isMetaFile,
+  getAllFiles,
+  getConfig,
+  getMeta,
+  writeMeta,
+};

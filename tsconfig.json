@@ -13,14 +13,14 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
   },
   "include": [
-    "electron/**/*.ts",
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "typings/**/*.d.ts"
+    "typings/**/*.d.ts",
+    "electron/fileUtils.js"
   ]
 }
