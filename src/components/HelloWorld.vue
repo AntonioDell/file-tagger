@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getRootDirectory, getTaggedFiles, getUntaggedFiles } from "@/repository/files";
+
+
+getRootDirectory().then(dir => console.log(dir));
+getUntaggedFiles()
+getTaggedFiles()
 
 defineProps<{ msg: string }>()
 
@@ -10,7 +16,7 @@ const count = ref(0)
   <h1>{{ msg }}</h1>
 
   <p>
-    Recommended IDET setup:
+    Recommended IDE setup:
     <a href="https://code.visualstudio.com/" target="_blank">VSCode</a>
     +
     <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>

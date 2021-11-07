@@ -1,6 +1,6 @@
 // electron/preload.js
 const { contextBridge, ipcRenderer } = require("electron");
-const fs = require("fs");
+const fs = require("fs").promises;
 
 // All of the Node.js APIs are available in the preload process.
 // It has the same sandbox as a Chrome extension.
@@ -15,7 +15,13 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Expose some electron/node api to renderer process 
-contextBridge.exposeInMainWorld("fs", fs);
-contextBridge.exposeInMainWorld("ipcRenderer", ipcRenderer);
-contextBridge.exposeInMainWorld("removeLoading", removeLoading);
+// whitelist channelsexport
+const validChannels = ["getRootDir", "getTaggedFiles", "getUntaggedFiles"];
+
+contextBridge.exposeInMainWorld("apiKey", {
+  invokeApi: (channel, ...args) => {
+    if (validChannels.includes(channel)) {
+      return ipcRenderer.invoke(channel, ...args);
+    }
+  },
+});
