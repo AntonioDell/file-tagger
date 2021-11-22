@@ -80,15 +80,35 @@ const getMeta = async (fileEntry) => {
 };
 
 const writeMeta = async (fileEntry) => {
-  const meta = {
-    ...fileEntry.meta,
-    tags: fileEntry.meta.tags.map((tag) => tag.toLowerCase()),
-  };
-  const metaFileContent = yaml.dump(meta);
-  await fs.writeFile(
-    path.join(path.dirname(fileEntry.fullPath), getMetaFileName(fileEntry)),
-    metaFileContent
+  const tags = fileEntry.meta.tags.map((tag) => tag.toLowerCase());
+  const metaFilePath = path.join(
+    path.dirname(fileEntry.fullPath),
+    getMetaFileName(fileEntry)
   );
+  if (tags.length === 0) {
+    await fs.unlink(metaFilePath);
+  } else {
+    const meta = {
+      ...fileEntry.meta,
+      tags,
+    };
+    const metaFileContent = yaml.dump(meta);
+    await fs.writeFile(metaFilePath, metaFileContent);
+  }
+};
+
+const getTaggedPaths = (allEntries) => {
+  return allEntries
+    .filter((entry) => isMetaFile(entry))
+    .map((entry) => {
+      const basePath = entry.fullPath.substring(
+        0,
+        entry.fullPath.indexOf(entry.fileName)
+      );
+      return (
+        basePath + entry.fileName.substring(1, entry.fileName.indexOf(".meta"))
+      );
+    });
 };
 
 module.exports = {
@@ -98,4 +118,5 @@ module.exports = {
   getConfig,
   getMeta,
   writeMeta,
+  getTaggedPaths,
 };

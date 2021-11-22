@@ -1,0 +1,8 @@
+{
+  "AllFilesView": {
+    "filter_label": "Add comma seperated tags to filter the list:"
+  },
+  "UntaggedFilesView": {
+    "new_tags_label": "Add comma seperated tags to filter the list:"
+  }
+}

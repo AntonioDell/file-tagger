@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { FileEntry } from '@/repository/files';
-import { ref } from '@vue/reactivity';
+import { ref, toRaw } from '@vue/reactivity';
 import TagPill from '@/components/TagPill.vue';
 
 interface FileContainerProps {
@@ -31,9 +31,9 @@ interface FileContainerProps {
     isSelected?: boolean
 }
 
-const { isSelectable, isSelected } = withDefaults(defineProps<FileContainerProps>(), { isSelectable: false, isSelected: false })
-
+const { isSelectable, isSelected, entry } = withDefaults(defineProps<FileContainerProps>(), { isSelectable: false, isSelected: false })
 const checked = ref(isSelected);
+const emit = defineEmits(['tagDeleted'])
 const onContainerClick = () => {
     if (!isSelectable) {
         return;
@@ -41,7 +41,7 @@ const onContainerClick = () => {
     checked.value = !checked.value;
 }
 const onTagDelete = (tag: string) => {
-    console.log(tag)
+    emit('tagDeleted', entry, tag)
 }
 </script>
 
@@ -69,6 +69,9 @@ const onTagDelete = (tag: string) => {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: start;
+}
+.tag-container > * {
+    margin-right: 0.5rem;
 }
 </style>

@@ -1,43 +1,24 @@
 <script setup lang="ts">
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup
-import FileList from "@/components/FileList.vue";
-import { computed, ref } from "@vue/reactivity";
-import { ApiResponse, FileEntry, getTaggedFiles, getUntaggedFiles, setFileTags } from "@/repository/files";
+import AllFilesView from "@/views/AllFilesView.vue";
+import NavBar from "@/components/NavBar.vue";
+import { NavigationTarget } from "./repository/navigation";
+import { ref } from "@vue/reactivity";
+import UntaggedFilesView from "./views/UntaggedFilesView.vue";
 
-const allFiles = ref<FileEntry[]>([]);
-const tagFilter = ref('')
+const navigationTarget = ref<NavigationTarget>(NavigationTarget.ALL_FILES);
 
-const filteredFiles = computed(() => {
-  console.log(filters.value);
-
-  if (filters.value.length == 0) {
-    return allFiles.value;
-  }
-  return allFiles.value.filter(file => filters.value.every(filter => file.meta?.tags?.includes(filter.toLowerCase())))
-})
-const filters = computed(() => {
-  if (!tagFilter.value) {
-    return []
-  }
-  return tagFilter.value.split(",").map(filter => filter.trim()).filter(filter => filter !== "");
-})
-
-
-const addFileEntries = <T extends ApiResponse<FileEntry[]>>(response: T) => {
-  if (response.data) {
-    allFiles.value = allFiles.value.concat(response.data);
-  }
+const onNavigationChanged = (newTarget: NavigationTarget) => {
+  navigationTarget.value = newTarget
 }
-getUntaggedFiles().then(addFileEntries);
-getTaggedFiles().then(addFileEntries)
+
 </script>
 
 <template>
-  <label for="tag-filter">Add comma seperated tags to filter the list:</label>
-  <input type="text" name="tag-filter" id="tag-filter" v-model="tagFilter" />
-  <p>{{ filters.join("|") }}</p>
-  <FileList :file-entries="filteredFiles" />
+  <NavBar @navigation-changed="onNavigationChanged"></NavBar>
+  <main>
+    <AllFilesView v-if="navigationTarget === NavigationTarget.ALL_FILES" />
+    <UntaggedFilesView v-else-if="navigationTarget === NavigationTarget.UNTAGGED_FILES" />
+  </main>
 </template>
 
 <style>
@@ -47,6 +28,8 @@ getTaggedFiles().then(addFileEntries)
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+main {
+  margin: 0.5rem;
 }
 </style>

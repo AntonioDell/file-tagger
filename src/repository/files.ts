@@ -11,6 +11,22 @@ export const getRootDirectory = async (): Promise<ApiResponse<FileEntry>> => {
   return invokeApi(ApiKey.GET_ROOT_DIR);
 };
 
+export const getAllFiles = async (): Promise<ApiResponse<FileEntry[]>> => {
+  const taggedFilesResponse = await getTaggedFiles();
+  const untaggedFilesResponse = await getUntaggedFiles();
+  if (!taggedFilesResponse.ok || !untaggedFilesResponse.ok) {
+    return !taggedFilesResponse.ok
+      ? taggedFilesResponse
+      : untaggedFilesResponse;
+  }
+  return {
+    ok: true,
+    data: (taggedFilesResponse.data || []).concat(
+      untaggedFilesResponse.data || []
+    ),
+  };
+};
+
 export const getTaggedFiles = async (): Promise<ApiResponse<FileEntry[]>> => {
   return invokeApi(ApiKey.GET_TAGGED_FILES);
 };
