@@ -1,5 +1,4 @@
-const path = require("path");
-const { ipcMain } = require("electron");
+const { ipcMain, dialog } = require("electron");
 const {
   getAllFiles,
   getConfig,
@@ -8,8 +7,9 @@ const {
   getMeta,
   writeMeta,
   getTaggedPaths,
+  createConfig,
+  deleteTagFile,
 } = require("./fileUtils.js");
-const { log, trace } = require("console");
 
 const getRootDir = async () => {
   const config = await getConfig();
@@ -17,10 +17,7 @@ const getRootDir = async () => {
     return config;
   }
   return {
-    data: {
-      fullPath: config.rootPath,
-      fileName: path.basename(config.rootPath),
-    },
+    data: config.rootPath,
     ok: true,
   };
 };
@@ -69,11 +66,39 @@ const setFileTags = async (event, ...args) => {
   return;
 };
 
+const selectRootDir = async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory", "showHiddenFiles"],
+  });
+  if (result.canceled) {
+    return { data: "", ok: true };
+  }
+  const rootPath = result.filePaths[0];
+  createConfig(rootPath);
+  return { data: rootPath, ok: true };
+};
+
+const removeAllTags = async () => {
+  const config = await getConfig();
+  if (config.error) {
+    return config;
+  }
+  const fileEntries = await getAllFiles(config.rootPath);
+  await Promise.all(
+    fileEntries
+      .filter((entry) => !isMetaFile(entry))
+      .map((entry) => deleteTagFile(entry))
+  );
+  return { ok: true };
+};
+
 exports.validChannels = [
   "getRootDir",
   "getTaggedFiles",
   "getUntaggedFiles",
   "setFileTags",
+  "selectRootDir",
+  "removeAllTags",
 ];
 
 exports.setupChannels = () => {
@@ -84,4 +109,8 @@ exports.setupChannels = () => {
   ipcMain.handle("getTaggedFiles", getTaggedFiles);
 
   ipcMain.handle("setFileTags", setFileTags);
+
+  ipcMain.handle("selectRootDir", selectRootDir);
+
+  ipcMain.handle("removeAllTags", removeAllTags);
 };

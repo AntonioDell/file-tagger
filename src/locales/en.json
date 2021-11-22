@@ -4,5 +4,8 @@
   },
   "UntaggedFilesView": {
     "new_tags_label": "Add comma seperated tags to filter the list:"
+  },
+  "ConfigView": {
+    "selection_label": "Root folder:"
   }
 }

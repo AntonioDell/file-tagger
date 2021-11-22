@@ -13,19 +13,23 @@ const getConfig = async () => {
     });
     config = yaml.load(configFile);
   } catch (error) {
-    // TODO: Remove test code
-    config = { rootPath: path.join(app.getPath("home"), "test") };
-    try {
-      await fs.writeFile(configPath, yaml.dump(config));
-    } catch (breakingError) {
-      console.error(
-        `Unable to write config yaml to path ${configPath}.`,
-        breakingError
-      );
-      return { error: breakingError, ok: false };
-    }
+    return { error, ok: false };
   }
   return config;
+};
+
+const createConfig = async (rootPath) => {
+  const config = { rootPath };
+  const configPath = path.join(app.getPath("userData"), "config.yml");
+  try {
+    await fs.writeFile(configPath, yaml.dump(config));
+  } catch (breakingError) {
+    console.error(
+      `Unable to write config yaml to path ${configPath}.`,
+      breakingError
+    );
+    return { error: breakingError, ok: false };
+  }
 };
 
 /**
@@ -111,6 +115,16 @@ const getTaggedPaths = (allEntries) => {
     });
 };
 
+const deleteTagFile = async (entry) => {
+  try {
+    return fs.unlink(
+      path.join(path.dirname(entry.fullPath), getMetaFileName(entry))
+    );
+  } catch (error) {
+    return;
+  }
+};
+
 module.exports = {
   getMetaFileName,
   isMetaFile,
@@ -119,4 +133,6 @@ module.exports = {
   getMeta,
   writeMeta,
   getTaggedPaths,
+  createConfig,
+  deleteTagFile,
 };

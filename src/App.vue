@@ -4,20 +4,47 @@ import NavBar from "@/components/NavBar.vue";
 import { NavigationTarget } from "./repository/navigation";
 import { ref } from "@vue/reactivity";
 import UntaggedFilesView from "./views/UntaggedFilesView.vue";
+import ConfigView from "./views/ConfigView.vue";
+import { getRootDirectory } from "./repository/files";
 
-const navigationTarget = ref<NavigationTarget>(NavigationTarget.ALL_FILES);
+const navigationTarget = ref<NavigationTarget>(NavigationTarget.CONFIG);
+const rootDir = ref<String>("");
+const disableTargets = ref<NavigationTarget[]>([
+  NavigationTarget.ALL_FILES,
+  NavigationTarget.UNTAGGED_FILES,
+]);
 
 const onNavigationChanged = (newTarget: NavigationTarget) => {
-  navigationTarget.value = newTarget
-}
+  navigationTarget.value = newTarget;
+};
 
+const refreshRootDirectory = async () => {
+  const response = await getRootDirectory();
+  if (response.ok && response.data) {
+    disableTargets.value = [];
+    rootDir.value = response.data;
+    navigationTarget.value = NavigationTarget.ALL_FILES;
+  }
+};
+refreshRootDirectory();
 </script>
 
 <template>
-  <NavBar @navigation-changed="onNavigationChanged"></NavBar>
+  <NavBar
+    :key="disableTargets.join()"
+    @navigation-changed="onNavigationChanged"
+    :disable-targets="disableTargets"
+  ></NavBar>
   <main>
-    <AllFilesView v-if="navigationTarget === NavigationTarget.ALL_FILES" />
-    <UntaggedFilesView v-else-if="navigationTarget === NavigationTarget.UNTAGGED_FILES" />
+    <ConfigView
+      v-if="navigationTarget === NavigationTarget.CONFIG"
+      :root-dir="rootDir"
+      @root-dir-selected="refreshRootDirectory"
+    ></ConfigView>
+    <AllFilesView v-else-if="navigationTarget === NavigationTarget.ALL_FILES" />
+    <UntaggedFilesView
+      v-else-if="navigationTarget === NavigationTarget.UNTAGGED_FILES"
+    />
   </main>
 </template>
 
