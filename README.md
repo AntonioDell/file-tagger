@@ -1,15 +1,37 @@
-# Vue 3 + Typescript + Vite
+# File tagger
 
-This template should help get you started developing with Vue 3 and Typescript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+⚠️ DISCLAIMER ⚠️
+This project is experimental.
+You are highly discouraged to use the functionality on important files/directories.
+I am not liable for any data loss that may happen on your system.
 
-## Source
+Based on the amazing work of the [Vite-Test repository](https://github.com/gorgc/vite-test).
+This is mainly an exercise to get started with Vue 3 + Electron + Typescript and also solve the use case of tagging files on the client by storing them besides the original files in hidden .meta files.
+Feel free to do what ever you like with the code 😃
 
-https://github.com/gorgc/vite-test
+## Usage
 
-## Recommended IDE Setup
+Upon starting you have to select a root directory in the config page.
+All files underneath this root directory will get recursively considered for tagging by the application.
+
+See all tags on each file in the page "All files".
+Add new tags for each untagged file in the "Untagged files" page.
+Tags for a file `/home/user/test.pdf` will be stored in `/home/user/.test.pdf.meta`.
+
+Remove all created tag files (`.meta` files only, the original files are not affected) by using the `Remove all tags` button in the config page.
+
+## Development
+
+Run dev server with `yarn electron:dev`
+
+### Recommended IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
 
-## Type Support For `.vue` Imports in TS
+## Build
 
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's `.vue` type support plugin by running `Volar: Switch TS Plugin on/off` from VSCode command palette.
+Run `yarn app:build` to create an AppImage.
+
+The project uses [electron-builder](https://www.electron.build/) to build.
+As of today only a linux AppImage build is supported.
+Feel free to add further build targets by extending the `package.json` as described in the electron-builder documentation.
