@@ -2,7 +2,6 @@ const { ipcMain, dialog } = require("electron");
 const {
   getAllFiles,
   getConfig,
-  getMetaFileName,
   isMetaFile,
   getMeta,
   writeMeta,
